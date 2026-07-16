@@ -89,17 +89,6 @@
     font-size:12px;
     color:var(--muted);
   }
-  .header-center{
-    position:absolute;
-    left:50%;
-    top:50%;
-    transform:translate(-50%,-50%);
-    display:flex;
-    align-items:center;
-  }
-  .header-center *{
-    position:static !important;
-  }
   .dot{
     width:8px;height:8px;border-radius:50%;
     background:var(--muted);
@@ -394,21 +383,23 @@
   .survey-fields{
     width:100%;
     border-collapse:collapse;
+    table-layout:fixed;
   }
   .survey-fields tr + tr td{border-top:1px solid var(--border);}
   .survey-fields td{
     padding:6px 10px 6px 0;
     font-size:12.5px;
     vertical-align:top;
+    word-wrap:break-word;
+    overflow-wrap:break-word;
   }
   .survey-fields td.field-title{
     color:var(--muted);
     font-family:'JetBrains Mono',monospace;
     font-size:11px;
-    white-space:nowrap;
-    width:1%;
+    width:34%;
   }
-  .survey-fields td.field-value{color:var(--text);}
+  .survey-fields td.field-value{color:var(--text); width:66%;}
 
   #confettiCanvas{
     position:fixed;
@@ -462,9 +453,6 @@
   @media (max-width:900px){
     .stats{grid-template-columns:repeat(2,1fr);}
   }
-  @media (max-width:700px){
-    .header-center{transform:translate(-50%,-50%) scale(0.8);}
-  }
   @media (max-width:600px){
     header{padding:16px 18px;}
     main{padding:20px 18px 90px;}
@@ -485,8 +473,6 @@
     <div class="wordmark">SNAPPIC <span class="tag">WEBHOOK DASHBOARD</span></div>
     <div class="tagline" id="tagline">Insert coin. Receive webhook.</div>
   </div>
-
-
   <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">connecting…</span></div>
 </header>
 
@@ -1013,7 +999,6 @@ connectWS();
 setInterval(loadStats, 30000);
 setInterval(populateFilters, 30000);
 </script>
-
 
 </body>
 </html>
