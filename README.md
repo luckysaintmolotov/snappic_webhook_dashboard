@@ -3,7 +3,7 @@ SNAPPIC WEBHOOK DASHBOARD
 (or: "the little SQLite gremlin that watches your photo booth so you don't have to")
 
  ╔═══════════════════════════════════╗
- ║   INSERT COIN TO RECEIVE WEBHOOK   ║
+ ║   INSERT COIN TO RECEIVE WEBHOOK  ║
  ╚═══════════════════════════════════╝
 
 Somewhere, right now, a stranger is making an incredible face into an
