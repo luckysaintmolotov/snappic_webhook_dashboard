@@ -107,7 +107,57 @@ def init_db() -> None:
     conn.close()
 
 
+def backfill_device_names() -> None:
+    """
+    One-time-per-startup repair: device_name and the sessions lookup table
+    were added after this app may have already been collecting events, so
+    older rows (and anything referencing a session seen before the upgrade)
+    can be missing device_name. Recompute it from the raw_json every row
+    already has stored.
+    """
+    conn = get_conn()
+
+    # Pass 1: rebuild the sessions lookup from any session-type rows,
+    # in case they predate the sessions table itself.
+    session_rows = conn.execute(
+        "SELECT session_id, session_type, event_id, received_at, raw_json FROM events WHERE type='session'"
+    ).fetchall()
+    for r in session_rows:
+        if not r["session_id"]:
+            continue
+        try:
+            payload = json.loads(r["raw_json"])
+        except (TypeError, json.JSONDecodeError):
+            continue
+        device = ((payload.get("session") or {}).get("device")) or {}
+        if not device.get("name"):
+            continue
+        conn.execute(
+            """INSERT INTO sessions (session_id, device_name, device_id, session_type, event_id, first_seen_at)
+               VALUES (?, ?, ?, ?, ?, ?)
+               ON CONFLICT(session_id) DO UPDATE SET
+                 device_name=COALESCE(sessions.device_name, excluded.device_name),
+                 device_id=COALESCE(sessions.device_id, excluded.device_id)""",
+            (r["session_id"], device.get("name"), device.get("id"), r["session_type"], r["event_id"], r["received_at"]),
+        )
+    conn.commit()
+
+    # Pass 2: fill in any events.device_name still missing, now that the
+    # sessions lookup is as complete as the stored data allows.
+    missing = conn.execute(
+        "SELECT id, session_id FROM events WHERE (device_name IS NULL OR device_name = '') "
+        "AND session_id IS NOT NULL AND session_id != ''"
+    ).fetchall()
+    for r in missing:
+        row = conn.execute("SELECT device_name FROM sessions WHERE session_id = ?", (r["session_id"],)).fetchone()
+        if row and row["device_name"]:
+            conn.execute("UPDATE events SET device_name = ? WHERE id = ?", (row["device_name"], r["id"]))
+    conn.commit()
+    conn.close()
+
+
 init_db()
+backfill_device_names()
 
 
 # ---------------------------------------------------------------------------
